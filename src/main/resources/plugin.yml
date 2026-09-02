@@ -1,0 +1,15 @@
+name: ItemLock
+version: 0.1.0
+main: com.bountysmp.itemlock.ItemLockPlugin
+api-version: '1.21.11'
+author: Sylvye
+description: GUI-configurable important item protection.
+commands:
+  itemlock:
+    description: Open the ItemLock menu.
+    usage: /itemlock
+    aliases: [ilock, il]
+permissions:
+  itemlock.admin:
+    description: Configure ItemLock and receive operator-only destruction alerts.
+    default: op

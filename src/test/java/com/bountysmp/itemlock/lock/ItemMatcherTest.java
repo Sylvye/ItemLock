@@ -1,0 +1,46 @@
+package com.bountysmp.itemlock.lock;
+
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import com.bountysmp.itemlock.BukkitTest;
+import com.bountysmp.itemlock.ItemLockPlugin;
+import com.bountysmp.itemlock.model.LockDefinition;
+import com.bountysmp.itemlock.model.MatchType;
+import org.bukkit.Material;
+import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.ItemMeta;
+import org.junit.jupiter.api.Test;
+import org.mockbukkit.mockbukkit.MockBukkit;
+
+final class ItemMatcherTest extends BukkitTest {
+    @Test
+    void exactMatchIgnoresAmountAndOwnTags() {
+        ItemLockPlugin plugin = MockBukkit.load(ItemLockPlugin.class);
+        ItemStack sample = namedDiamond("Key");
+        LockDefinition definition = LockDefinition.create(sample, MatchType.EXACT);
+        plugin.registry().upsert(definition);
+        ItemStack candidate = namedDiamond("Key");
+        candidate.setAmount(42);
+
+        plugin.tracker().tagIfMatching(candidate);
+
+        assertTrue(plugin.tracker().matcher().matches(definition, candidate));
+    }
+
+    @Test
+    void exactMatchRejectsDifferentMeta() {
+        ItemLockPlugin plugin = MockBukkit.load(ItemLockPlugin.class);
+        LockDefinition definition = LockDefinition.create(namedDiamond("Key"), MatchType.EXACT);
+
+        assertFalse(plugin.tracker().matcher().matches(definition, namedDiamond("Other")));
+    }
+
+    private ItemStack namedDiamond(String name) {
+        ItemStack itemStack = new ItemStack(Material.DIAMOND);
+        ItemMeta meta = itemStack.getItemMeta();
+        meta.setDisplayName(name);
+        itemStack.setItemMeta(meta);
+        return itemStack;
+    }
+}
