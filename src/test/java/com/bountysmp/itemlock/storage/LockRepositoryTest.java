@@ -23,6 +23,7 @@ final class LockRepositoryTest extends BukkitTest {
         LockRepository repository = new LockRepository(new File(tempDir, "locks.yml"));
         LockDefinition definition = LockDefinition.create(new ItemStack(Material.NETHER_STAR), MatchType.MATERIAL);
         definition.setDropProtection(true);
+        definition.setDestructionProtection(true);
         definition.addDestroyed(3);
 
         repository.save(java.util.List.of(definition), Map.of());
@@ -31,6 +32,7 @@ final class LockRepositoryTest extends BukkitTest {
         assertEquals(1, snapshot.definitions().size());
         assertEquals(Material.NETHER_STAR, snapshot.definitions().getFirst().sample().getType());
         assertTrue(snapshot.definitions().getFirst().dropProtection());
+        assertTrue(snapshot.definitions().getFirst().destructionProtection());
         assertEquals(3L, snapshot.definitions().getFirst().destroyedCount());
         assertTrue(snapshot.definitions().getFirst().placeProtection());
         assertTrue(snapshot.definitions().getFirst().destructionSoundEnabled());

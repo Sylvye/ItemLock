@@ -4,7 +4,6 @@ import com.bountysmp.itemlock.model.LockDefinition;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
-import java.util.UUID;
 import org.bukkit.Bukkit;
 import org.bukkit.NamespacedKey;
 import org.bukkit.entity.Item;
@@ -28,7 +27,6 @@ public final class ItemTracker implements Listener {
     private final ItemMatcher matcher;
     private final NamespacedKey lockIdKey;
     private final NamespacedKey trackedKey;
-    private final Map<UUID, Map<String, Integer>> droppedCounts = new LinkedHashMap<>();
 
     public ItemTracker(Plugin plugin, LockRegistry registry) {
         this.plugin = plugin;
@@ -44,6 +42,7 @@ public final class ItemTracker implements Listener {
 
     public void scanOnlinePlayers() {
         for (Player player : Bukkit.getOnlinePlayers()) {
+            registry.clearOffline(player.getUniqueId());
             scanPlayer(player);
         }
     }
@@ -106,17 +105,11 @@ public final class ItemTracker implements Listener {
     }
 
     public void trackDroppedItem(Item item) {
-        Optional<LockDefinition> definition = tagIfMatching(item.getItemStack());
-        if (definition.isEmpty()) {
-            return;
-        }
-        Map<String, Integer> counts = new LinkedHashMap<>();
-        counts.put(definition.get().id(), item.getItemStack().getAmount());
-        droppedCounts.put(item.getUniqueId(), counts);
+        tagIfMatching(item.getItemStack());
     }
 
     public void untrackDroppedItem(Item item) {
-        droppedCounts.remove(item.getUniqueId());
+        // Counts are derived from live entities, so there is no cache to update.
     }
 
     public int onlineCount(String lockId) {
@@ -129,8 +122,13 @@ public final class ItemTracker implements Listener {
 
     public int droppedCount(String lockId) {
         int total = 0;
-        for (Map<String, Integer> counts : droppedCounts.values()) {
-            total += counts.getOrDefault(lockId, 0);
+        for (org.bukkit.World world : Bukkit.getWorlds()) {
+            for (Item item : world.getEntitiesByClass(Item.class)) {
+                Optional<LockDefinition> definition = definitionFor(item.getItemStack());
+                if (definition.isPresent() && definition.get().id().equals(lockId)) {
+                    total += item.getItemStack().getAmount();
+                }
+            }
         }
         return total;
     }
@@ -199,10 +197,8 @@ public final class ItemTracker implements Listener {
     }
 
     private void countItem(Map<String, Integer> counts, ItemStack itemStack) {
-        String lockId = lockId(itemStack);
-        if (lockId != null && registry.byId(lockId) != null) {
-            counts.merge(lockId, itemStack.getAmount(), Integer::sum);
-        }
+        definitionFor(itemStack).ifPresent(definition ->
+            counts.merge(definition.id(), itemStack.getAmount(), Integer::sum));
     }
 
     private boolean isEmpty(ItemStack itemStack) {

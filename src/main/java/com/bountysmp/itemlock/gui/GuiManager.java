@@ -222,6 +222,8 @@ public final class GuiManager implements Listener {
             definition.setBurnProtection(!definition.burnProtection());
         } else if (slot == 32) {
             definition.setExplosionProtection(!definition.explosionProtection());
+        } else if (slot == 36) {
+            definition.setDestructionProtection(!definition.destructionProtection());
         } else if (slot == 34) {
             definition.setDestructionMessage(!definition.destructionMessage());
         } else if (slot == 38) {
@@ -297,6 +299,7 @@ public final class GuiManager implements Listener {
         inventory.setItem(30, toggleItem("Burn Protection", definition.burnProtection()));
         inventory.setItem(32, toggleItem("Explosion Protection", definition.explosionProtection()));
         inventory.setItem(34, toggleItem("Destruction Message", definition.destructionMessage()));
+        inventory.setItem(36, toggleItem("Recover on Destruction", definition.destructionProtection()));
         inventory.setItem(38, GuiUtil.item(Material.BELL, GuiUtil.Tone.WARNING, "Audience: " + definition.destructionAudience(), "Click to cycle."));
         inventory.setItem(40, toggleItem("Destruction Sound", definition.destructionSoundEnabled()));
         inventory.setItem(42, GuiUtil.item(Material.NOTE_BLOCK, GuiUtil.Tone.INFO, "Sound: " + definition.destructionSoundKey(), "Click to edit registry key."));
@@ -323,6 +326,7 @@ public final class GuiManager implements Listener {
         lore.add("Drop: " + definition.dropProtection());
         lore.add("Burn: " + definition.burnProtection());
         lore.add("Explosion: " + definition.explosionProtection());
+        lore.add("Recover destroyed: " + definition.destructionProtection());
         lore.add("Message: " + definition.destructionMessage() + " / " + definition.destructionAudience());
         lore.add("Sound: " + definition.destructionSoundEnabled());
         lore.add("Destroyed: " + definition.destroyedCount());

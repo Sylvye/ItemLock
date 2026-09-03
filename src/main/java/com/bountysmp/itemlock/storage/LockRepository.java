@@ -111,6 +111,7 @@ public final class LockRepository {
         definition.setDropProtection(section.getBoolean("drop-protection", false));
         definition.setBurnProtection(section.getBoolean("burn-protection", false));
         definition.setExplosionProtection(section.getBoolean("explosion-protection", false));
+        definition.setDestructionProtection(section.getBoolean("destruction-protection", false));
         definition.setDestructionMessage(section.getBoolean("destruction-message.enabled", false));
         definition.setDestructionAudience(DestructionAudience.parse(section.getString("destruction-message.audience"), DestructionAudience.OPERATOR));
         definition.setDestructionSoundEnabled(section.getBoolean("destruction-message.sound-enabled", true));
@@ -132,6 +133,7 @@ public final class LockRepository {
         section.set("drop-protection", definition.dropProtection());
         section.set("burn-protection", definition.burnProtection());
         section.set("explosion-protection", definition.explosionProtection());
+        section.set("destruction-protection", definition.destructionProtection());
         section.set("destruction-message.enabled", definition.destructionMessage());
         section.set("destruction-message.audience", definition.destructionAudience().name());
         section.set("destruction-message.sound-enabled", definition.destructionSoundEnabled());

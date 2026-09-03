@@ -12,6 +12,7 @@ import java.util.UUID;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Bukkit;
+import org.bukkit.Location;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Registry;
 import org.bukkit.Sound;
@@ -141,10 +142,11 @@ public final class ProtectionListener implements Listener {
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onDespawn(ItemDespawnEvent event) {
-        Optional<LockDefinition> definition = tracker.definitionFor(event.getEntity().getItemStack());
-        if (definition.isPresent() && definition.get().destructionMessage()) {
-            reportDestroyed(event.getEntity(), definition.get());
+        if (isGiveFeedbackItem(event.getEntity())) {
+            return;
         }
+        Optional<LockDefinition> definition = tracker.definitionFor(event.getEntity().getItemStack());
+        definition.ifPresent(value -> handleDestroyed(event.getEntity(), value));
         tracker.untrackDroppedItem(event.getEntity());
     }
 
@@ -153,10 +155,11 @@ public final class ProtectionListener implements Listener {
         if (!(event.getEntity() instanceof Item item) || !isDestructiveRemoval(event.getCause())) {
             return;
         }
-        Optional<LockDefinition> definition = tracker.definitionFor(item.getItemStack());
-        if (definition.isPresent() && definition.get().destructionMessage()) {
-            reportDestroyed(item, definition.get());
+        if (event.getCause() == EntityRemoveEvent.Cause.DESPAWN && isGiveFeedbackItem(item)) {
+            return;
         }
+        Optional<LockDefinition> definition = tracker.definitionFor(item.getItemStack());
+        definition.ifPresent(value -> handleDestroyed(item, value));
         tracker.untrackDroppedItem(item);
     }
 
@@ -168,15 +171,24 @@ public final class ProtectionListener implements Listener {
         return player.isDead() || player.getHealth() <= 0.0;
     }
 
-    private void reportDestroyed(Item item, LockDefinition definition) {
+    private void handleDestroyed(Item item, LockDefinition definition) {
         if (!reportedDestroyedEntities.add(item.getUniqueId())) {
             return;
         }
+        Bukkit.getScheduler().runTask(plugin, () -> reportedDestroyedEntities.remove(item.getUniqueId()));
         ItemStack stack = item.getItemStack();
         int amount = Math.max(1, stack.getAmount());
         definition.addDestroyed(amount);
         registry.save();
         tracker.untrackDroppedItem(item);
+
+        if (definition.destructionProtection()) {
+            respawnAtOrigin(item, stack.clone());
+            return;
+        }
+        if (!definition.destructionMessage()) {
+            return;
+        }
 
         Component message = Component.text("[ItemLock] ", NamedTextColor.RED)
             .append(ItemDisplay.countedItemComponent(stack, amount))
@@ -189,6 +201,31 @@ public final class ProtectionListener implements Listener {
             playSound(definition, recipients);
         }
         plugin.getLogger().warning(amount + "x " + ItemDisplay.plainName(stack) + " was destroyed.");
+    }
+
+    private void respawnAtOrigin(Item destroyedItem, ItemStack stack) {
+        Bukkit.getScheduler().runTask(plugin, () -> {
+            int surfaceY = destroyedItem.getWorld().getHighestBlockYAt(0, 0) + 1;
+            int safeY = Math.max(surfaceY, destroyedItem.getWorld().getMinHeight() + 1);
+            Location origin = new Location(destroyedItem.getWorld(), 0.0, safeY + 0.25, 0.0);
+            Item replacement = destroyedItem.getWorld().dropItem(origin, stack);
+            tracker.trackDroppedItem(replacement);
+            announceRecovery(stack, safeY);
+        });
+    }
+
+    private void announceRecovery(ItemStack stack, int y) {
+        Component message = Component.text("[ItemLock] ", NamedTextColor.GREEN)
+            .append(Component.text("The ", NamedTextColor.YELLOW))
+            .append(ItemDisplay.itemComponent(stack))
+            .append(Component.text(" has been dropped at 0, " + y + ", 0.", NamedTextColor.YELLOW));
+        for (Player player : Bukkit.getOnlinePlayers()) {
+            player.sendMessage(message);
+        }
+    }
+
+    private boolean isGiveFeedbackItem(Item item) {
+        return item.getPickupDelay() == Short.MAX_VALUE;
     }
 
     private List<Player> recipients(LockDefinition definition) {
@@ -261,8 +298,8 @@ public final class ProtectionListener implements Listener {
 
     private boolean isDestructiveRemoval(EntityRemoveEvent.Cause cause) {
         return switch (cause) {
-            case DEATH, DESPAWN, ENTER_BLOCK, EXPLODE, HIT, OUT_OF_WORLD, PLUGIN, DISCARD -> true;
-            case DROP, MERGE, PICKUP, PLAYER_QUIT, TRANSFORMATION, UNLOAD -> false;
+            case DEATH, DESPAWN, ENTER_BLOCK, EXPLODE, HIT, OUT_OF_WORLD -> true;
+            case DROP, MERGE, PICKUP, PLAYER_QUIT, PLUGIN, TRANSFORMATION, UNLOAD, DISCARD -> false;
         };
     }
 }

@@ -14,6 +14,7 @@ public final class LockDefinition {
     private boolean dropProtection;
     private boolean burnProtection;
     private boolean explosionProtection;
+    private boolean destructionProtection;
     private boolean destructionMessage;
     private DestructionAudience destructionAudience = DestructionAudience.OPERATOR;
     private boolean destructionSoundEnabled = true;
@@ -107,6 +108,14 @@ public final class LockDefinition {
         this.explosionProtection = explosionProtection;
     }
 
+    public boolean destructionProtection() {
+        return destructionProtection;
+    }
+
+    public void setDestructionProtection(boolean destructionProtection) {
+        this.destructionProtection = destructionProtection;
+    }
+
     public boolean destructionMessage() {
         return destructionMessage;
     }
@@ -177,6 +186,7 @@ public final class LockDefinition {
         copy.dropProtection = dropProtection;
         copy.burnProtection = burnProtection;
         copy.explosionProtection = explosionProtection;
+        copy.destructionProtection = destructionProtection;
         copy.destructionMessage = destructionMessage;
         copy.destructionAudience = destructionAudience;
         copy.destructionSoundEnabled = destructionSoundEnabled;
