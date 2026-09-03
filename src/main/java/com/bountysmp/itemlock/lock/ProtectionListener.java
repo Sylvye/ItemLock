@@ -19,6 +19,8 @@ import org.bukkit.Sound;
 import org.bukkit.SoundCategory;
 import org.bukkit.entity.Item;
 import org.bukkit.entity.Player;
+import org.bukkit.entity.Allay;
+import org.bukkit.event.block.Action;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
@@ -26,16 +28,24 @@ import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.EntityDropItemEvent;
 import org.bukkit.event.entity.EntityRemoveEvent;
+import org.bukkit.event.entity.EntityPickupItemEvent;
 import org.bukkit.event.entity.ItemDespawnEvent;
 import org.bukkit.event.inventory.InventoryAction;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryDragEvent;
 import org.bukkit.event.inventory.InventoryMoveItemEvent;
+import org.bukkit.event.inventory.InventoryPickupItemEvent;
 import org.bukkit.event.inventory.InventoryType;
 import org.bukkit.event.player.PlayerDropItemEvent;
+import org.bukkit.event.player.PlayerArmorStandManipulateEvent;
+import org.bukkit.event.player.PlayerInteractEntityEvent;
+import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.Plugin;
+import io.papermc.paper.event.player.PlayerFlowerPotManipulateEvent;
+import io.papermc.paper.event.player.PlayerInsertLecternBookEvent;
+import io.papermc.paper.event.player.PlayerItemFrameChangeEvent;
 
 public final class ProtectionListener implements Listener {
     private final Plugin plugin;
@@ -60,6 +70,10 @@ public final class ProtectionListener implements Listener {
     @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
     public void onInventoryClick(InventoryClickEvent event) {
         if (!(event.getWhoClicked() instanceof Player)) {
+            return;
+        }
+        if (isProtectedBundleInsertion(event)) {
+            event.setCancelled(true);
             return;
         }
         if (!hasNonPlayerTop(event.getView().getTopInventory())) {
@@ -88,6 +102,56 @@ public final class ProtectionListener implements Listener {
     }
 
     @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+    public void onPlayerInteractEntity(PlayerInteractEntityEvent event) {
+        if (!(event.getRightClicked() instanceof Allay)) {
+            return;
+        }
+        ItemStack heldItem = event.getPlayer().getInventory().getItem(event.getHand());
+        if (protectedFromNonPlayerPickup(heldItem)) {
+            event.setCancelled(true);
+        }
+    }
+
+    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+    public void onArmorStandManipulate(PlayerArmorStandManipulateEvent event) {
+        if (protectedFromNonPlayerPickup(event.getPlayerItem())) {
+            event.setCancelled(true);
+        }
+    }
+
+    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+    public void onItemFrameChange(PlayerItemFrameChangeEvent event) {
+        if (event.getAction() == PlayerItemFrameChangeEvent.ItemFrameChangeAction.PLACE
+            && protectedFromNonPlayerPickup(event.getItemStack())) {
+            event.setCancelled(true);
+        }
+    }
+
+    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+    public void onFlowerPotManipulate(PlayerFlowerPotManipulateEvent event) {
+        if (event.isPlacing() && protectedForDeposit(event.getItem())) {
+            event.setCancelled(true);
+        }
+    }
+
+    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+    public void onLecternInsert(PlayerInsertLecternBookEvent event) {
+        if (protectedForDeposit(event.getBook())) {
+            event.setCancelled(true);
+        }
+    }
+
+    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+    public void onDirectStorageInteract(PlayerInteractEvent event) {
+        if (event.getAction() != Action.RIGHT_CLICK_BLOCK || event.getClickedBlock() == null) {
+            return;
+        }
+        if (isDirectStorage(event.getClickedBlock().getType()) && protectedForDeposit(event.getItem())) {
+            event.setCancelled(true);
+        }
+    }
+
+    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
     public void onInventoryDrag(InventoryDragEvent event) {
         if (!hasNonPlayerTop(event.getView().getTopInventory())) {
             return;
@@ -102,6 +166,21 @@ public final class ProtectionListener implements Listener {
     @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
     public void onInventoryMove(InventoryMoveItemEvent event) {
         if (!isPlayerInventory(event.getDestination()) && protectedForDeposit(event.getItem())) {
+            event.setCancelled(true);
+        }
+    }
+
+    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+    public void onInventoryPickup(InventoryPickupItemEvent event) {
+        if (protectedFromNonPlayerPickup(event.getItem().getItemStack())) {
+            event.setCancelled(true);
+        }
+    }
+
+    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+    public void onEntityPickup(EntityPickupItemEvent event) {
+        if (!(event.getEntity() instanceof Player)
+            && protectedFromNonPlayerPickup(event.getItem().getItemStack())) {
             event.setCancelled(true);
         }
     }
@@ -167,6 +246,18 @@ public final class ProtectionListener implements Listener {
         return tracker.hasProtection(itemStack, LockDefinition::depositProtection);
     }
 
+    private boolean protectedFromNonPlayerPickup(ItemStack itemStack) {
+        return tracker.hasProtection(itemStack, LockDefinition::pickupProtection);
+    }
+
+    private boolean isProtectedBundleInsertion(InventoryClickEvent event) {
+        return switch (event.getAction()) {
+            case PICKUP_ALL_INTO_BUNDLE, PICKUP_SOME_INTO_BUNDLE -> protectedForDeposit(event.getCurrentItem());
+            case PLACE_ALL_INTO_BUNDLE, PLACE_SOME_INTO_BUNDLE -> protectedForDeposit(event.getCursor());
+            default -> false;
+        };
+    }
+
     private boolean isDeathDrop(Player player) {
         return player.isDead() || player.getHealth() <= 0.0;
     }
@@ -183,7 +274,7 @@ public final class ProtectionListener implements Listener {
         tracker.untrackDroppedItem(item);
 
         if (definition.destructionProtection()) {
-            respawnAtOrigin(item, stack.clone());
+            respawnAtOrigin(item, stack.clone(), definition);
             return;
         }
         if (!definition.destructionMessage()) {
@@ -203,24 +294,28 @@ public final class ProtectionListener implements Listener {
         plugin.getLogger().warning(amount + "x " + ItemDisplay.plainName(stack) + " was destroyed.");
     }
 
-    private void respawnAtOrigin(Item destroyedItem, ItemStack stack) {
+    private void respawnAtOrigin(Item destroyedItem, ItemStack stack, LockDefinition definition) {
         Bukkit.getScheduler().runTask(plugin, () -> {
             int surfaceY = destroyedItem.getWorld().getHighestBlockYAt(0, 0) + 1;
             int safeY = Math.max(surfaceY, destroyedItem.getWorld().getMinHeight() + 1);
             Location origin = new Location(destroyedItem.getWorld(), 0.0, safeY + 0.25, 0.0);
             Item replacement = destroyedItem.getWorld().dropItem(origin, stack);
             tracker.trackDroppedItem(replacement);
-            announceRecovery(stack, safeY);
+            announceRecovery(stack, safeY, definition);
         });
     }
 
-    private void announceRecovery(ItemStack stack, int y) {
+    private void announceRecovery(ItemStack stack, int y, LockDefinition definition) {
         Component message = Component.text("[ItemLock] ", NamedTextColor.GREEN)
             .append(Component.text("The ", NamedTextColor.YELLOW))
             .append(ItemDisplay.itemComponent(stack))
             .append(Component.text(" has been dropped at 0, " + y + ", 0.", NamedTextColor.YELLOW));
-        for (Player player : Bukkit.getOnlinePlayers()) {
+        List<Player> recipients = new ArrayList<>(Bukkit.getOnlinePlayers());
+        for (Player player : recipients) {
             player.sendMessage(message);
+        }
+        if (definition.destructionSoundEnabled()) {
+            playSound(definition, recipients);
         }
     }
 
@@ -266,14 +361,29 @@ public final class ProtectionListener implements Listener {
     }
 
     private boolean swapsHotbarIntoSlot(InventoryAction action) {
-        return action == InventoryAction.HOTBAR_SWAP;
+        return action == InventoryAction.HOTBAR_SWAP
+            || action == InventoryAction.HOTBAR_MOVE_AND_READD;
     }
 
     private ItemStack hotbarItem(InventoryClickEvent event) {
-        if (!(event.getWhoClicked() instanceof Player player) || event.getHotbarButton() < 0) {
+        if (!(event.getWhoClicked() instanceof Player player)) {
+            return null;
+        }
+        if (event.getClick() == org.bukkit.event.inventory.ClickType.SWAP_OFFHAND) {
+            return player.getInventory().getItemInOffHand();
+        }
+        if (event.getHotbarButton() < 0) {
             return null;
         }
         return player.getInventory().getItem(event.getHotbarButton());
+    }
+
+    static boolean isDirectStorage(org.bukkit.Material material) {
+        return material == org.bukkit.Material.DECORATED_POT
+            || material == org.bukkit.Material.CHISELED_BOOKSHELF
+            || material == org.bukkit.Material.JUKEBOX
+            || material == org.bukkit.Material.CAMPFIRE
+            || material == org.bukkit.Material.SOUL_CAMPFIRE;
     }
 
     private boolean hasNonPlayerTop(Inventory inventory) {

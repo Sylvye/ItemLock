@@ -23,6 +23,7 @@ final class LockRepositoryTest extends BukkitTest {
         LockRepository repository = new LockRepository(new File(tempDir, "locks.yml"));
         LockDefinition definition = LockDefinition.create(new ItemStack(Material.NETHER_STAR), MatchType.MATERIAL);
         definition.setDropProtection(true);
+        definition.setPickupProtection(true);
         definition.setDestructionProtection(true);
         definition.addDestroyed(3);
 
@@ -34,6 +35,7 @@ final class LockRepositoryTest extends BukkitTest {
         assertTrue(snapshot.definitions().getFirst().dropProtection());
         assertTrue(snapshot.definitions().getFirst().destructionProtection());
         assertEquals(3L, snapshot.definitions().getFirst().destroyedCount());
+        assertTrue(snapshot.definitions().getFirst().pickupProtection());
         assertTrue(snapshot.definitions().getFirst().placeProtection());
         assertTrue(snapshot.definitions().getFirst().destructionSoundEnabled());
         assertEquals("minecraft:entity.ender_dragon.growl", snapshot.definitions().getFirst().destructionSoundKey());

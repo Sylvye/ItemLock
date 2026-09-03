@@ -109,6 +109,7 @@ public final class LockRepository {
         definition.setDepositProtection(section.getBoolean("deposit-protection", true));
         definition.setPlaceProtection(section.getBoolean("place-protection", true));
         definition.setDropProtection(section.getBoolean("drop-protection", false));
+        definition.setPickupProtection(section.getBoolean("pickup-protection", false));
         definition.setBurnProtection(section.getBoolean("burn-protection", false));
         definition.setExplosionProtection(section.getBoolean("explosion-protection", false));
         definition.setDestructionProtection(section.getBoolean("destruction-protection", false));
@@ -131,6 +132,7 @@ public final class LockRepository {
         section.set("deposit-protection", definition.depositProtection());
         section.set("place-protection", definition.placeProtection());
         section.set("drop-protection", definition.dropProtection());
+        section.set("pickup-protection", definition.pickupProtection());
         section.set("burn-protection", definition.burnProtection());
         section.set("explosion-protection", definition.explosionProtection());
         section.set("destruction-protection", definition.destructionProtection());

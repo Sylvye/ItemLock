@@ -1,7 +1,7 @@
 name: ItemLock
-version: 0.1.0
+version: 0.1.4
 main: com.bountysmp.itemlock.ItemLockPlugin
-api-version: '1.21.11'
+api-version: '26.2'
 author: Sylvye
 description: GUI-configurable important item protection.
 commands:

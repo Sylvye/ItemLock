@@ -1,6 +1,8 @@
 package com.bountysmp.itemlock.lock;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.bountysmp.itemlock.BukkitTest;
 import com.bountysmp.itemlock.ItemLockPlugin;
@@ -16,6 +18,17 @@ import org.mockbukkit.mockbukkit.MockBukkit;
 import org.mockbukkit.mockbukkit.world.WorldMock;
 
 final class ProtectionListenerTest extends BukkitTest {
+    @Test
+    void identifiesDirectItemStorageBlocks() {
+        assertTrue(ProtectionListener.isDirectStorage(Material.DECORATED_POT));
+        assertTrue(ProtectionListener.isDirectStorage(Material.CHISELED_BOOKSHELF));
+        assertTrue(ProtectionListener.isDirectStorage(Material.JUKEBOX));
+        assertTrue(ProtectionListener.isDirectStorage(Material.CAMPFIRE));
+        assertTrue(ProtectionListener.isDirectStorage(Material.SOUL_CAMPFIRE));
+        assertFalse(ProtectionListener.isDirectStorage(Material.COMPOSTER));
+        assertFalse(ProtectionListener.isDirectStorage(Material.RESPAWN_ANCHOR));
+    }
+
     @Test
     void giveFeedbackItemIsNotReportedAsDestroyed() {
         ItemLockPlugin plugin = MockBukkit.load(ItemLockPlugin.class);

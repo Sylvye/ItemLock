@@ -12,6 +12,7 @@ public final class LockDefinition {
     private boolean depositProtection = true;
     private boolean placeProtection = true;
     private boolean dropProtection;
+    private boolean pickupProtection;
     private boolean burnProtection;
     private boolean explosionProtection;
     private boolean destructionProtection;
@@ -90,6 +91,14 @@ public final class LockDefinition {
 
     public void setDropProtection(boolean dropProtection) {
         this.dropProtection = dropProtection;
+    }
+
+    public boolean pickupProtection() {
+        return pickupProtection;
+    }
+
+    public void setPickupProtection(boolean pickupProtection) {
+        this.pickupProtection = pickupProtection;
     }
 
     public boolean burnProtection() {
@@ -184,6 +193,7 @@ public final class LockDefinition {
         copy.depositProtection = depositProtection;
         copy.placeProtection = placeProtection;
         copy.dropProtection = dropProtection;
+        copy.pickupProtection = pickupProtection;
         copy.burnProtection = burnProtection;
         copy.explosionProtection = explosionProtection;
         copy.destructionProtection = destructionProtection;

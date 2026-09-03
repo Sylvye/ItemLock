@@ -212,27 +212,31 @@ public final class GuiManager implements Listener {
             definition.setEnabled(!definition.enabled());
         } else if (slot == 12) {
             definition.setMatchType(definition.matchType().next());
-        } else if (slot == 14) {
+        } else if (slot == 19) {
             definition.setDepositProtection(!definition.depositProtection());
-        } else if (slot == 16) {
+        } else if (slot == 21) {
             definition.setDropProtection(!definition.dropProtection());
-        } else if (slot == 28) {
+        } else if (slot == 23) {
             definition.setPlaceProtection(!definition.placeProtection());
-        } else if (slot == 30) {
+        } else if (slot == 25) {
+            definition.setPickupProtection(!definition.pickupProtection());
+        } else if (slot == 28) {
             definition.setBurnProtection(!definition.burnProtection());
-        } else if (slot == 32) {
+        } else if (slot == 30) {
             definition.setExplosionProtection(!definition.explosionProtection());
-        } else if (slot == 36) {
+        } else if (slot == 32) {
             definition.setDestructionProtection(!definition.destructionProtection());
         } else if (slot == 34) {
             definition.setDestructionMessage(!definition.destructionMessage());
-        } else if (slot == 38) {
+        } else if (slot == 36) {
             definition.setDestructionAudience(definition.destructionAudience().next());
-        } else if (slot == 40) {
+        } else if (slot == 38) {
             definition.setDestructionSoundEnabled(!definition.destructionSoundEnabled());
-        } else if (slot == 42) {
+        } else if (slot == 40) {
             promptSound(player, definition, open.page());
             return;
+        } else if (slot == 42) {
+            definition.setDestroyedCount(0L);
         } else if (slot == 46) {
             registry.upsert(definition);
             tracker.scanPlayer(player);
@@ -293,16 +297,18 @@ public final class GuiManager implements Listener {
         inventory.setItem(4, lockIcon(definition));
         inventory.setItem(10, toggleItem("Enabled", definition.enabled()));
         inventory.setItem(12, GuiUtil.item(Material.NAME_TAG, GuiUtil.Tone.INFO, "Match: " + definition.matchType(), "Click to cycle."));
-        inventory.setItem(14, toggleItem("Deposit Protection", definition.depositProtection()));
-        inventory.setItem(16, toggleItem("Drop Protection", definition.dropProtection()));
-        inventory.setItem(28, toggleItem("Place Protection", definition.placeProtection()));
-        inventory.setItem(30, toggleItem("Burn Protection", definition.burnProtection()));
-        inventory.setItem(32, toggleItem("Explosion Protection", definition.explosionProtection()));
+        inventory.setItem(19, toggleItem("Deposit Protection", definition.depositProtection()));
+        inventory.setItem(21, toggleItem("Drop Protection", definition.dropProtection()));
+        inventory.setItem(23, toggleItem("Place Protection", definition.placeProtection()));
+        inventory.setItem(25, toggleItem("Hopper/Entity Pickup Protection", definition.pickupProtection()));
+        inventory.setItem(28, toggleItem("Burn Protection", definition.burnProtection()));
+        inventory.setItem(30, toggleItem("Explosion Protection", definition.explosionProtection()));
+        inventory.setItem(32, toggleItem("Recover on Destruction", definition.destructionProtection()));
         inventory.setItem(34, toggleItem("Destruction Message", definition.destructionMessage()));
-        inventory.setItem(36, toggleItem("Recover on Destruction", definition.destructionProtection()));
-        inventory.setItem(38, GuiUtil.item(Material.BELL, GuiUtil.Tone.WARNING, "Audience: " + definition.destructionAudience(), "Click to cycle."));
-        inventory.setItem(40, toggleItem("Destruction Sound", definition.destructionSoundEnabled()));
-        inventory.setItem(42, GuiUtil.item(Material.NOTE_BLOCK, GuiUtil.Tone.INFO, "Sound: " + definition.destructionSoundKey(), "Click to edit registry key."));
+        inventory.setItem(36, GuiUtil.item(Material.BELL, GuiUtil.Tone.WARNING, "Audience: " + definition.destructionAudience(), "Click to cycle."));
+        inventory.setItem(38, toggleItem("Destruction Sound", definition.destructionSoundEnabled()));
+        inventory.setItem(40, GuiUtil.item(Material.NOTE_BLOCK, GuiUtil.Tone.INFO, "Sound: " + definition.destructionSoundKey(), "Click to edit registry key."));
+        inventory.setItem(42, GuiUtil.item(Material.CLOCK, GuiUtil.Tone.WARNING, "Reset Destroyed Stat", "Current: " + definition.destroyedCount(), "Click to reset to 0, then save."));
         inventory.setItem(46, GuiUtil.item(Material.LIME_CONCRETE, GuiUtil.Tone.SUCCESS, "Save"));
         inventory.setItem(49, GuiUtil.item(Material.ARROW, GuiUtil.Tone.WARNING, "Cancel"));
         inventory.setItem(52, GuiUtil.item(Material.BARRIER, GuiUtil.Tone.DANGER, "Delete"));
@@ -324,6 +330,7 @@ public final class GuiManager implements Listener {
         lore.add("Deposit: " + definition.depositProtection());
         lore.add("Place: " + definition.placeProtection());
         lore.add("Drop: " + definition.dropProtection());
+        lore.add("Hopper/entity pickup: " + definition.pickupProtection());
         lore.add("Burn: " + definition.burnProtection());
         lore.add("Explosion: " + definition.explosionProtection());
         lore.add("Recover destroyed: " + definition.destructionProtection());
