@@ -10,8 +10,11 @@ import com.bountysmp.itemlock.model.LockDefinition;
 import com.bountysmp.itemlock.model.MatchType;
 import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.block.BlockFace;
 import org.bukkit.entity.Item;
+import org.bukkit.event.block.Action;
 import org.bukkit.event.entity.ItemDespawnEvent;
+import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.ItemStack;
 import org.junit.jupiter.api.Test;
 import org.mockbukkit.mockbukkit.MockBukkit;
@@ -25,8 +28,33 @@ final class ProtectionListenerTest extends BukkitTest {
         assertTrue(ProtectionListener.isDirectStorage(Material.JUKEBOX));
         assertTrue(ProtectionListener.isDirectStorage(Material.CAMPFIRE));
         assertTrue(ProtectionListener.isDirectStorage(Material.SOUL_CAMPFIRE));
+        assertTrue(ProtectionListener.isDirectStorage(Material.OAK_SHELF));
+        assertTrue(ProtectionListener.isDirectStorage(Material.WARPED_SHELF));
+        assertTrue(ProtectionListener.isDirectStorage(Material.PALE_OAK_SHELF));
         assertFalse(ProtectionListener.isDirectStorage(Material.COMPOSTER));
         assertFalse(ProtectionListener.isDirectStorage(Material.RESPAWN_ANCHOR));
+    }
+
+    @Test
+    void shelfDepositRespectsDepositProtection() {
+        ItemLockPlugin plugin = MockBukkit.load(ItemLockPlugin.class);
+        LockDefinition definition = LockDefinition.create(new ItemStack(Material.DIAMOND), MatchType.MATERIAL);
+        plugin.registry().upsert(definition);
+        WorldMock world = server.addSimpleWorld("world");
+        world.getBlockAt(0, 64, 0).setType(Material.OAK_SHELF);
+        ItemStack heldItem = new ItemStack(Material.DIAMOND);
+
+        PlayerInteractEvent protectedClick = new PlayerInteractEvent(server.addPlayer(), Action.RIGHT_CLICK_BLOCK,
+            heldItem, world.getBlockAt(0, 64, 0), BlockFace.UP);
+        server.getPluginManager().callEvent(protectedClick);
+        assertTrue(protectedClick.isCancelled());
+
+        definition.setDepositProtection(false);
+        plugin.registry().upsert(definition);
+        PlayerInteractEvent allowedClick = new PlayerInteractEvent(server.addPlayer(), Action.RIGHT_CLICK_BLOCK,
+            heldItem, world.getBlockAt(0, 64, 0), BlockFace.UP);
+        server.getPluginManager().callEvent(allowedClick);
+        assertFalse(allowedClick.isCancelled());
     }
 
     @Test

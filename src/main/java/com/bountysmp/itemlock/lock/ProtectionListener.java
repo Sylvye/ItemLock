@@ -17,6 +17,7 @@ import org.bukkit.NamespacedKey;
 import org.bukkit.Registry;
 import org.bukkit.Sound;
 import org.bukkit.SoundCategory;
+import org.bukkit.Tag;
 import org.bukkit.entity.Item;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.Allay;
@@ -379,7 +380,8 @@ public final class ProtectionListener implements Listener {
     }
 
     static boolean isDirectStorage(org.bukkit.Material material) {
-        return material == org.bukkit.Material.DECORATED_POT
+        return Tag.WOODEN_SHELVES.isTagged(material)
+            || material == org.bukkit.Material.DECORATED_POT
             || material == org.bukkit.Material.CHISELED_BOOKSHELF
             || material == org.bukkit.Material.JUKEBOX
             || material == org.bukkit.Material.CAMPFIRE
